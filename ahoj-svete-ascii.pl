@@ -1,0 +1,3 @@
+
+pozdrav('Ahoj, svete!').
+
