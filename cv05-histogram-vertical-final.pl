@@ -24,9 +24,8 @@ printList([X|List]) :-
     printList(List).
     
 /* reverse all list members and members in those members https://goo.gl/x2aMo2 */
-reverseListMembersAndAllTheirMembers([], []) :- !.
+reverseListMembersAndAllTheirMembers([], []).
 reverseListMembersAndAllTheirMembers([H|T], X) :-
-    !,
     reverseListMembersAndAllTheirMembers(H, NewH),
     reverseListMembersAndAllTheirMembers(T, NewT),
     append(NewT, [NewH], X).
