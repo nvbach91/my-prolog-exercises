@@ -1,0 +1,261 @@
+\documentclass[a4paper]{article}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+
+%% Sets page size and margins
+\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath}
+\usepackage{cancel}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\newcommand{\HRule}[1]{\rule{\linewidth}{#1}} 	% Horizontal rule
+
+\makeatletter							% Title
+\def\printtitle{%						
+    {\centering \@title\par}}
+\makeatother									
+
+\makeatletter							% Author
+\def\printauthor{%					
+    {\centering \large \@author}}				
+\makeatother							
+
+\title{	\normalsize\textsc {
+          University of economics in Prague\\	
+          Faculty of Informatics and Statistics\\	
+          Department of Information and Knowledge Engineering\\
+        }
+\textsc{} 	% Subtitle
+		 	\\[5.0cm]								% 2cm spacing
+			%\HRule{0.5pt} \\						% Upper rule
+			\LARGE \textbf{\uppercase{Prolog: Matrix Calculator}}	% Title
+			\HRule{2pt} \\ [0.5cm]		% Lower rule + 0.5cm spacing
+			\normalsize \today			% Todays date
+		}
+
+\author{
+		Nguyen Viet Bach\\	
+        \texttt{nvbach91@outlook.com} \\
+}
+
+\begin{document}
+
+\thispagestyle{empty}		% Remove page numbering on this page
+
+\printtitle					% Print the title data as defined above
+  	\vfill
+\printauthor				% Print the author data as defined above
+\newpage
+\begin{abstract}
+This paper is a seminar work documentation for subject 4IZ617 - Logika a sémantika. It deals with the implementation of a text-based SWI-Prolog program that can perform several linear matrix operations.
+\end{abstract}
+\newpage
+
+\section{Introduction}
+
+The objective of this paper is to implement a simple matrix calculator in Prolog. This program is executable in the SWI-Prolog console and answers to queries on matrix operations within the environment of SWI-Prolog.
+
+\subsection{Limitations}
+The matrix calculator can only perform several operations on matrices listed as follows:
+\begin{itemize}
+\item Addition
+\item Subtraction
+\item Scalar multiplication
+\item Scalar division
+\item Multiplication of two matrices
+\item Transposition
+\item Finding determinant of a square matrix of size 3x3 or smaller
+\item Finding the main diagonal of the matrix
+\item Trace of a square matrix
+\end{itemize}
+
+\section{Used libraries}
+This project makes use of one single SWI-Prolog library \textbf{clpfd} \cite{clpfd} . Constrain Logic Programming over Finite Domains is an instance of general Constrain Logic Programming scheme, extending logic programming with reasoning over specialized domains. This library clpfd contains the predicate \texttt{transpose/2} which is used to transpose matrices.
+
+\section{Usage} \label{usage}
+To use this program, first the user has to load the source code file \texttt{prolog-matrix-calculator.pl} into SWI-Prolog by \textit{consulting} it. After the file has been sucessfully consulted, the user can start querying for matrix operations. The syntax of queries are listed as follows:
+
+\begin{verbatim}
+% matrix addition
+?- [[1,2,3],[1,2,3],[1,2,3]] plus [[1,2,3],[1,2,3],[1,2,3]].
+
+% matrix substraction
+?- [[1,2,3],[1,2,3],[1,2,3]] minus [[1,2,3],[1,2,3],[1,2,3]].
+
+% matrix multiplication by constant
+?- [[4,6,8],[2,4,6],[4,6,8]] multiply_c 2.
+
+% matrix division by constant
+?- [[4,6,8],[2,4,6],[4,6,8]] divide_c 2.
+
+% matrix multiplication
+?- [[1,2,3],[1,2,3],[1,2,3]] multiply [[1,2,3],[1,2,3],[1,2,3]].
+
+% matrix transposition
+?- transpose [[1,2,3],[1,2,3],[1,2,3]].
+
+% finding determinant
+?- determinant [[1,2,3],[1,-2,3],[4,5,-6]].
+
+% finding diagonal
+?- diagonal [[1,2],[-2,3]].
+
+% trace
+?- trace [[1,2],[-2,3]].
+
+% variables operations are valid
+?- A plus B.
+
+% calculate arithmetic expressions up to 3 members
+?- calc(A+B+C, R).
+?- calc(A*B-C, R).
+?- calc(A+B-C, R).
+?- calc(A*Const/B, R).
+?- calc(A+B/Const, R).
+.
+.
+.
+\end{verbatim}
+
+The result for queries are printed in the console.
+
+\section{Implementation}
+This section focuses on the implementation of the matrix calculator in Prolog.
+
+\subsection{Utilities}
+
+Several generic predicates are defined to help implement the logic of this program such as \texttt{isNumericMatrix} for input checking. These utility predicates are listed below:
+\begin{center}
+\begin{tabular}{ l l }
+ \texttt{isNumericMatrices(+ListOfMatrices)} & validates a list of matrices \\ 
+ \texttt{isNumericMatrix(+Matrix)} & validates one matrix \\ 
+ \texttt{isNumericList(+List)} & validates one row in a matrix \\ 
+ \texttt{nMatrixRows(+Matrix,-NRows)} & finds vertical dimension of the matrix \\ 
+ \texttt{nMatrixColss(+Matrix,-NCols)} & finds horizontal dimension of the matrix \\ 
+ \texttt{isSquareMatrix(+Matrix)} & truw if the matrix is square \\ 
+ \texttt{numericMultiply(+N1,+N2,-Product)} & Prolog Goal for use with \texttt{maplist} \\ 
+ \texttt{numericDivide(+N1,+N2,-Quotient)} & Prolog Goal for use with \texttt{maplist} \\ 
+ \texttt{sumList(+L,-S)} & computes the sum of all elements in a list \\ 
+ \texttt{printMatrix(+M)} & pretty print matrix in the console \\ 
+ \texttt{isSquareMatrix(+M)} & checks for square matrix \\ 
+\end{tabular}
+\end{center}
+
+
+\subsection{Operators}
+
+Prolog operators are defined to improve the readability of source code. By defining custom operators, one can create a very intuitive interface that can help users to easily understand the usage of the program. Operators can be defined using the built-in predicate \texttt{op/3}. In this project, there are several custom operators defined to use with matrix operations. These operators are:
+\begin{center}
+\begin{tabular}{ l l }
+ \texttt{plus} & matrix addition \\ 
+ \texttt{minus} & matrix subtraction \\ 
+ \texttt{multiply\_c} & scalar multiplication by constant \\ 
+ \texttt{divide\_c} & scalar division by constant \\ 
+ \texttt{multiply} & multiplication between two matrices \\ 
+ \texttt{transpose} & matrix transposition \\ 
+ \texttt{determinant} & finding determinant of given matrix \\
+ \texttt{diagonal} & finding main diagonal of given matrix \\
+ \texttt{trace} & finding trace of given matrix \\
+\end{tabular}
+\end{center}
+
+The syntax of these operators can be seen in section \ref{usage}.
+
+\subsection{Matrix in Prolog}
+Matrices are usually referred to as rectangular arrays of numbers. In other words, matrices are tables of numbers. This means the numbers are arranged in rows and columns, which are called \textit{dimensions}. A matrix of dimensions 2x3 has 2 rows and 3 columns.
+
+Like many other programming languages, matrices can be represented by arrays of arrays. In Prolog, arrays are called \textit{lists}. Therefore, a matrix is a list of lists of numbers.
+
+\subsection{Matrix operations}
+There are many operations that can be performed over matrices. Given specific rules and methods, matrices can be added together, subtracted from each other, multiplied and so on. The implementation of these operations are written in Prolog using rules and predicates.
+
+\subsubsection{Addition and subtraction}
+
+The algorithm for addition and subtraction of matrices of the same size is straightforward. The pairs of elements at the same positions in both matrices are added together and the results are projected to a final matrix. For example, let $C = A \pm B$, and then
+
+\[C_{ij} = A_{ij} \pm B_{ij}\]
+
+SWI-Prolog built-int predicate \texttt{maplist/4} \cite{maplist} is used to apply these operations on all elements of the matrix. This predicate is true if Goal (operation template) can successfully be applied on all elements of the given three Lists.
+
+\subsubsection{Scalar multiplication and scalar division}
+
+Scalar multiplication and scalar division are also very simple. Each element in the matrix is multiplied or divided by the given scalar or constant \cite{stapel1}. Similarly to addition and subtration, scalar multiplication and scalar division can be implemented using \texttt{maplist}. But in this project, a more naive algorithm based on list manipulations is used where each row of the matrix is scalar multiplied or divided by the constant and incrementally added to the final list of lists because scalar multiplication and scalar addition give a matrix if the same size.
+
+
+\subsubsection{Transposition}
+
+Matrix transposition in linear algebra means to find a transpose of a given matrix. The transpose of matrix $A$ is another matrix $A^T$ where the rows and columns are \textit{swapped}. $A^T$ can also be described as the reflection of $A$ over its main diagonal. Formally:
+
+\[[A^T]_{ij} = [A]_{ji}\]
+
+In this project, the predicate \texttt{transpose/2} is used to transpose matrices. This predicate is available in the \texttt{clpfd} library of SWI-Prolog.
+
+
+\subsubsection{Multiplication}
+
+The multiplication of two matrices is a \textit{non-commutative} operation and it requires a particular properties of both matrices. The number of columns of the first matrix must match the number of columns of the second matrix. Therefore, if $A$ is an $n \times m$ matrix and $B$ is an $m \times p$ matrix, then their matrix product $AB$ is an $n \times p$ matrix. Formally:
+
+\[(AB)_{ij} = \sum_{k=1}^mA_{ik}B_{kj}\]
+where $(AB)_{ij}$ is the dot product of row $i$ of matrix $A$ and column $j$ of matrix $B$. The implemented algorithm first checks for the required dimensions of the two input matrices $A$ and $B$. The second matrix is transposed, then the multiplication is computed using \texttt{maplist/3}. Under the hood, dot product of pairs of vectors are computed to find each element $(AB)_{ij}$ of the final matrix $AB$.
+
+\subsubsection{Determinant}
+The algorithm for finding the determinant of a $2\times2$ matrix is simple using the criss-cross multiplication and then subtract two numbers.
+
+\[det(A_{2 \times 2}) = [A]_{11}[A]_{22} - [A]_{12}[A]_{21} \]
+
+Finding determinant of matrices of size $3\times3$ is still easy.
+
+\[
+\begin{aligned}
+  & det(A_{3 \times 3}) = \\  
+  & [A]_{11} * ([A]_{22} * [A]_{33} - [A]_{23} * [A]_{32}) - \\
+  & [A]_{12} * ([A]_{21} * [A]_{33} - [A]_{23} * [A]_{31}) + \\
+  & [A]_{13} * ([A]_{21} * [A]_{32} - [A]_{22} * [A]_{31}).
+\end{aligned}
+\]
+
+But for bigger matrices, the process is more complicated. There are several ways of finding determinants of matrices, for example using Gaussian elimination on the matrix and get the product of the numbers on the main diagonal. Another algorithm is \textit{cofactor expansion} \cite{stapel2}. This algorithm uses \textit{minors} and \textit{cofactors} to find the determinant.
+
+Let $det(A)$ be the determinant of matrix $A$. A minor matrix $M_{i,j}$ is the square matrix formed by deleting $i^{th}$ row and $j^{th}$ column from a larger square matrix $A$ and $[A]_{ij}$ is the element where $i^{th}$ row and $j^{th}$ column intersect. In the following example, $[A]_{ij} = c$.
+
+\[
+\begin{pmatrix}
+        \cancel{a} & \cancel{b} & \cancel{c} & \cancel{d}\\
+        e & f & \cancel{g} & h\\
+        i & j & \cancel{k} & l\\
+        m & n & \cancel{o} & p\\
+\end{pmatrix}
+\rightarrow
+\begin{pmatrix}
+        e & f & h\\
+        i & j & l\\
+        m & n & p\\
+\end{pmatrix}
+\]
+
+The cofactor $C_{i,j} = (-1)^{i+j}[A]_{i,j}$ and the determinant of matrix A is:
+
+\[
+det(A) = \sum_{i=1}^nC_{i,j}det(M_{i,j}).
+\]
+
+By all means, this is a recursive function. Recursion will occur until the algorithm reaches the computation of the determinant of a square matrix of size $2\times2$ which is trivial. The implementation of finding determinant in SWI-Prolog has the same approach. 
+
+\bibliographystyle{acm}
+\bibliography{pmc}
+
+\section*{Appendix}
+\begin{itemize}
+\item Source code \texttt{prolog-matrix-calculator.pl} can be found under \texttt{src} folder.
+\item To test the project, query for \texttt{-? test.}
+\end{itemize}
+
+
+\end{document}
